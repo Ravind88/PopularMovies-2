@@ -48,15 +48,18 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(getLayoutById());
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         mParent = findViewById(R.id.parent);
         mProgressDialog = Utility.getProgressDialogInstance(this);
         if (toolbar != null)
             setSupportActionBar(toolbar);
-        initUi();
+        initUi(savedInstanceState);
 
     }
+
+
 
     protected void showProgressDialog(boolean isShow) {
         if (mProgressDialog != null) {
@@ -76,7 +79,8 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     /**
      * Method to initialize view parameters
+     * @param savedInstanceState
      */
-    public abstract void initUi();
+    public abstract void initUi(Bundle savedInstanceState);
 
 }

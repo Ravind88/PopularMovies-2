@@ -12,8 +12,8 @@ public class AppConstants {
     /**
      * Please replace existing with your api key for movie data
      */
-    public static final String API_KEY = "YOUR_API_KEY";
-
+    //public static final String API_KEY = "YOUR_API_KEY";
+    public static final String API_KEY = "5b99a1d3dafe8a8aaf41f8fc5df1293b";
     //API Params
     public static final String PARAM_SORT_BY = "sort_by";
     public static final String PARAM_API_KEY = "api_key";

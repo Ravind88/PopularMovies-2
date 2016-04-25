@@ -2,6 +2,7 @@ package com.app.popularmovies.fragment;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -34,6 +35,13 @@ public abstract class BaseFragment extends Fragment {
         this.mContext = context;
     }
 
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(getLayoutById(), container, false);
@@ -48,14 +56,14 @@ public abstract class BaseFragment extends Fragment {
             mMaterialProgressBar.setIndeterminateDrawable(new IndeterminateProgressDrawable(mContext));
         mMaterialProgressDialog = Utility.getProgressDialogInstance(mContext);
         mParent = findViewById(R.id.parent);
-        initUi();
+        initUi(savedInstanceState);
     }
 
     protected View findViewById(int resId) {
         return view.findViewById(resId);
     }
 
-    protected abstract void initUi();
+    protected abstract void initUi(Bundle savedInstanceState);
 
     protected abstract int getLayoutById();
 

@@ -6,9 +6,8 @@
     android:orientation="horizontal"
     android:showDividers="middle">
 
-    <fragment
+    <FrameLayout
         android:id="@+id/item_list_fragment"
-        class="com.app.popularmovies.fragment.MoviesListFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1" />

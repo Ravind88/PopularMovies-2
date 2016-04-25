@@ -1,5 +1,7 @@
 package com.app.popularmovies.activity;
 
+import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.view.MenuItem;
 
 import com.app.popularmovies.R;
@@ -14,22 +16,29 @@ import com.app.popularmovies.model.MoviesResponseBean;
  * Poster's thickness of color
  */
 public class MovieDetailActivity extends BaseActivity  {
+    private static final String TAG_MY_FRAGMENT = "mydetailsFragment";
     private MoviesResponseBean.MoviesResult moviesResult;
-
+    MoviesDetailFragment moviesDetailFragment;
     @Override
     public int getLayoutById() {
         return R.layout.activity_movies_detail;
     }
 
     @Override
-    public void initUi() {
+    public void initUi(Bundle savedInstanceState) {
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
+        if(savedInstanceState==null){
+            moviesDetailFragment = new MoviesDetailFragment();
+            moviesDetailFragment.setArguments(getIntent().getExtras());
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.detail_container, moviesDetailFragment,TAG_MY_FRAGMENT).commit();
+        }else{
+            moviesDetailFragment = (MoviesDetailFragment)getSupportFragmentManager().getFragment(savedInstanceState, TAG_MY_FRAGMENT);
 
-        MoviesDetailFragment moviesDetailFragment = new MoviesDetailFragment();
-        moviesDetailFragment.setArguments(getIntent().getExtras());
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.detail_container, moviesDetailFragment).commit();
+        }
+
     }
 
     @Override
@@ -40,5 +49,13 @@ public class MovieDetailActivity extends BaseActivity  {
                 break;
         }
         return false;
+    }
+
+
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+        getSupportFragmentManager().putFragment(outState, "TAG_MY_FRAGMENT", moviesDetailFragment);
+
     }
 }

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 /**
  * Created by ravind maurya on 9/2/16.
  */
-public class MoviesResponseBean {
+public class MoviesResponseBean implements Parcelable {
 
     private int page;
 
@@ -22,6 +22,25 @@ public class MoviesResponseBean {
     private long totalPages;
 
     ArrayList<MoviesResult> results;
+
+    protected MoviesResponseBean(Parcel in) {
+        page = in.readInt();
+        totalResults = in.readLong();
+        totalPages = in.readLong();
+        results = in.createTypedArrayList(MoviesResult.CREATOR);
+    }
+
+    public static final Creator<MoviesResponseBean> CREATOR = new Creator<MoviesResponseBean>() {
+        @Override
+        public MoviesResponseBean createFromParcel(Parcel in) {
+            return new MoviesResponseBean(in);
+        }
+
+        @Override
+        public MoviesResponseBean[] newArray(int size) {
+            return new MoviesResponseBean[size];
+        }
+    };
 
     public int getPage() {
         return page;
@@ -37,6 +56,19 @@ public class MoviesResponseBean {
 
     public ArrayList<MoviesResult> getResults() {
         return results;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(page);
+        dest.writeLong(totalResults);
+        dest.writeLong(totalPages);
+        dest.writeTypedList(results);
     }
 
     public static class MoviesResult implements Parcelable {

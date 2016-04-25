@@ -3,6 +3,7 @@ package com.app.popularmovies.fragment;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -48,27 +49,26 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
     private RecyclerView mTrailersRecyclerView;
     private LinearLayout reviewsContainer;
     private TextView seeMoreReviews;
+    private Bundle savedState = null;
+    MoviesResponseBean.MoviesResult moviesResult2;
+    private TrailersResponseBean responseBean;
+    private ReviewsListingResponse reviewResponseBean;
+    private TextView movieName, movieDescTv;
+    private  SquareImageView movieImageView;
 
     @Override
     public int getLayoutById() {
         return R.layout.fragment_movies_detail;
     }
 
+
     @Override
-    public void initUi() {
-        moviesResult = getArguments().getParcelable(AppConstants.EXTRA_INTENT_PARCEL);
-        final TextView movieName = (TextView) findViewById(R.id.movie_name);
-        Utility.setText(movieName, moviesResult.getTitle());
-        TextView movieDescTv = (TextView) findViewById(R.id.movie_desc);
-        Utility.setText(movieDescTv, moviesResult.getOverview());
-        if (TextUtils.isEmpty(moviesResult.getOverview())) {
-            movieDescTv.setVisibility(View.GONE);
-        }
-        String formattedDate = Utility.parseDateTime(moviesResult.getReleaseDate(), AppConstants.DATE_FORMAT1
-                , AppConstants.DATE_FORMAT2);
-        Utility.setText((TextView) findViewById(R.id.movie_release_year), formattedDate);
-        Utility.setText((TextView) findViewById(R.id.movie_rating), moviesResult.getVoteAverage() + " /10");
-        final SquareImageView movieImageView = (SquareImageView) findViewById(R.id.movie_image);
+    public void initUi(Bundle savedInstanceState) {
+
+
+        movieName = (TextView) findViewById(R.id.movie_name);
+        movieDescTv = (TextView) findViewById(R.id.movie_desc);
+        movieImageView = (SquareImageView) findViewById(R.id.movie_image);
         mTrailersProgressBar = Utility.getProgressBarInstance(mContext, R.id.trailer_progress_bar);
         mTrailersProgressBar = (ProgressBar) findViewById(R.id.trailer_progress_bar);
         mTrailersProgressBar.setIndeterminateDrawable(new IndeterminateProgressDrawable(mContext));
@@ -82,6 +82,47 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
         seeMoreReviews = (TextView) findViewById(R.id.see_more_reviews);
         seeMoreReviews.setOnClickListener(this);
         seeMoreReviews.setVisibility(View.GONE);
+
+
+        if (savedInstanceState != null && savedState == null) {
+            savedState = savedInstanceState.getBundle("detail");
+        }
+        if (savedState != null) {
+            mTrailersProgressBar.setVisibility(View.GONE);
+            setHeaderData((MoviesResponseBean.MoviesResult) savedState.getParcelable("headerdata"));
+            setTagLine((MoviesResponseBean.MoviesResult) savedState.getParcelable("tagline"));
+            setTrailer((TrailersResponseBean) savedState.getParcelable("trailer"));
+            setreview((ReviewsListingResponse) savedState.getParcelable("review"));
+            setFavoriteText();
+        } else {
+            moviesResult = getArguments().getParcelable(AppConstants.EXTRA_INTENT_PARCEL);
+            setHeaderData(moviesResult);
+            getMoviesDetail();
+            getMovieTrailers();
+            getMovieReviews();
+            setFavoriteText();
+        }
+        savedState = null;
+
+
+    }
+
+    private void setHeaderData(MoviesResponseBean.MoviesResult moviesResult) {
+
+
+        Utility.setText(movieName, moviesResult.getTitle());
+        if (TextUtils.isEmpty(moviesResult.getOverview())) {
+            movieDescTv.setVisibility(View.GONE);
+        }
+        Utility.setText(movieDescTv, moviesResult.getOverview());
+
+        String formattedDate = Utility.parseDateTime(moviesResult.getReleaseDate(), AppConstants.DATE_FORMAT1
+                , AppConstants.DATE_FORMAT2);
+        Utility.setText((TextView) findViewById(R.id.movie_release_year), formattedDate);
+        Utility.setText((TextView) findViewById(R.id.movie_rating), moviesResult.getVoteAverage() + " /10");
+
+
+
         if (!TextUtils.isEmpty(moviesResult.getPosterPath()))
             Picasso.with(mContext)
                     .load(AppConstants.BASE_THUMB_IMAGE_URL + moviesResult.getPosterPath())
@@ -127,12 +168,36 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
         else {
             movieImageView.setImageResource(R.drawable.placeholder);
         }
-        getMoviesDetail();
-        getMovieTrailers();
-        getMovieReviews();
 
-        setFavoriteText();
     }
+
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        savedState = saveState(); /* vstup defined here for sure */
+    }
+
+
+    private Bundle saveState() { /* called either from onDestroyView() or onSaveInstanceState() */
+        Bundle state = new Bundle();
+        state.putParcelable("tagline", moviesResult2);
+        state.putParcelable("trailer", responseBean);
+        state.putParcelable("review", reviewResponseBean);
+        state.putParcelable("headerdata", moviesResult);
+        //
+        return state;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        /* If onDestroyView() is called first, we can use the previously savedState but we can't call saveState() anymore */
+        /* If onSaveInstanceState() is called first, we don't have savedState, so we need to call saveState() */
+        /* => (?:) operator inevitable! */
+        outState.putBundle("detail", (savedState != null) ? savedState : saveState());
+    }
+
 
     private void setFavoriteText() {
         MoviesListingDao moviesListingDao = new MoviesListingDao(mContext);
@@ -154,10 +219,10 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
                 @Override
                 public void onResponse(Response<MoviesResponseBean.MoviesResult> response, Retrofit retrofit) {
                     showProgressDialog(false);
-                    MoviesResponseBean.MoviesResult moviesResult2 = response.body();
+                    moviesResult2 = response.body();
                     if (moviesResult2 != null) {
-                        Utility.setText((TextView) findViewById(R.id.movie_runtime), moviesResult2.getRuntime() + " min");
-                        Utility.setText((TextView) findViewById(R.id.movie_tagline), moviesResult2.getTagLine());
+                        setTagLine(moviesResult2);
+
                     }
 
                 }
@@ -181,6 +246,14 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
         }
     }
 
+    private void setTagLine(MoviesResponseBean.MoviesResult moviesResult2) {
+
+        Utility.setText((TextView) findViewById(R.id.movie_runtime), moviesResult2.getRuntime() + " min");
+        Utility.setText((TextView) findViewById(R.id.movie_tagline), moviesResult2.getTagLine());
+
+
+    }
+
     private void getMovieTrailers() {
         findViewById(R.id.trailer_list_parent).setVisibility(View.GONE);
         if (AppController.getApplicationInstance().isNetworkConnected() && isAdded()) {
@@ -192,14 +265,8 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
                 @Override
                 public void onResponse(Response<TrailersResponseBean> response1, Retrofit retrofit) {
                     mTrailersProgressBar.setVisibility(View.GONE);
-                    TrailersResponseBean responseBean = response1.body();
-                    if (responseBean != null && responseBean.getResults() != null && !responseBean.getResults().isEmpty()) {
-                        TrailersAdapter trailersAdapter = new TrailersAdapter(mContext, responseBean.getResults());
-                        mTrailersRecyclerView.setAdapter(trailersAdapter);
-                        findViewById(R.id.trailer_list_parent).setVisibility(View.VISIBLE);
-                    } else {
-                        findViewById(R.id.trailer_list_parent).setVisibility(View.GONE);
-                    }
+                    responseBean = response1.body();
+                    setTrailer(responseBean);
                 }
 
                 @Override
@@ -221,6 +288,19 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
         }
     }
 
+    private void setTrailer(TrailersResponseBean responseBean) {
+
+        if (responseBean != null && responseBean.getResults() != null && !responseBean.getResults().isEmpty()) {
+            TrailersAdapter trailersAdapter = new TrailersAdapter(mContext, responseBean.getResults());
+            mTrailersRecyclerView.setAdapter(trailersAdapter);
+            findViewById(R.id.trailer_list_parent).setVisibility(View.VISIBLE);
+        } else {
+            findViewById(R.id.trailer_list_parent).setVisibility(View.GONE);
+        }
+
+
+    }
+
     private void getMovieReviews() {
         if (AppController.getApplicationInstance().isNetworkConnected() && isAdded()) {
             mTrailersProgressBar.setVisibility(View.VISIBLE);
@@ -230,15 +310,8 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
             beanCall.enqueue(new Callback<ReviewsListingResponse>() {
                 @Override
                 public void onResponse(Response<ReviewsListingResponse> response1, Retrofit retrofit) {
-                    ReviewsListingResponse responseBean = response1.body();
-                    if (responseBean != null) {
-                        ArrayList<ReviewsListingResponse.ReviewsEntity> reviewsEntities = responseBean.getResults();
-                        if (reviewsEntities != null && !reviewsEntities.isEmpty()) {
-                            addReviews(responseBean.getResults());
-                        } else {
-                            reviewsContainer.setVisibility(View.GONE);
-                        }
-                    }
+                    reviewResponseBean = response1.body();
+                    setreview(reviewResponseBean);
                 }
 
                 @Override
@@ -258,6 +331,20 @@ public class MoviesDetailFragment extends BaseFragment implements View.OnClickLi
                     })
                     .build();
         }
+    }
+
+    private void setreview(ReviewsListingResponse reviewResponseBean) {
+
+        if (reviewResponseBean != null) {
+            ArrayList<ReviewsListingResponse.ReviewsEntity> reviewsEntities = reviewResponseBean.getResults();
+            if (reviewsEntities != null && !reviewsEntities.isEmpty()) {
+                addReviews(reviewResponseBean.getResults());
+            } else {
+                reviewsContainer.setVisibility(View.GONE);
+            }
+        }
+
+
     }
 
     private void addReviews(ArrayList<ReviewsListingResponse.ReviewsEntity> resultsEntityArrayList) {

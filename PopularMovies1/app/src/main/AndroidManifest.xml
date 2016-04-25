@@ -14,7 +14,6 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".activity.MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,11 +24,11 @@
 
         <activity
             android:name=".activity.MovieDetailActivity"
-            android:configChanges="orientation|screenSize" />
+             />
 
         <activity
             android:name=".activity.ReviewsListingActivity"
-            android:configChanges="orientation|screenSize" />
+             />
 
         <activity
             android:name=".activity.YouTubeMainActivity"

@@ -1,14 +1,33 @@
 package com.app.popularmovies.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 
 /**
  * Created by ravind maurya on 3/25/2016.
  */
-public class TrailersResponseBean {
+public class TrailersResponseBean implements Parcelable {
 
     long id;
     ArrayList<ResultEntity> results;
+
+    protected TrailersResponseBean(Parcel in) {
+        id = in.readLong();
+    }
+
+    public static final Creator<TrailersResponseBean> CREATOR = new Creator<TrailersResponseBean>() {
+        @Override
+        public TrailersResponseBean createFromParcel(Parcel in) {
+            return new TrailersResponseBean(in);
+        }
+
+        @Override
+        public TrailersResponseBean[] newArray(int size) {
+            return new TrailersResponseBean[size];
+        }
+    };
 
     public ArrayList<ResultEntity> getResults() {
         return results;
@@ -16,6 +35,16 @@ public class TrailersResponseBean {
 
     public long getId() {
         return id;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(id);
     }
 
     public static class ResultEntity {

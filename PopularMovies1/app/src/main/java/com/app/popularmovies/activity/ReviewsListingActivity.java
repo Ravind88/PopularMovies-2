@@ -1,5 +1,6 @@
 package com.app.popularmovies.activity;
 
+import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.MenuItem;
 import android.view.View;
@@ -55,7 +56,7 @@ public class ReviewsListingActivity extends BaseActivity implements SwipeRefresh
     }
 
     @Override
-    public void initUi() {
+    public void initUi(Bundle savedInstanceState) {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         movieId = getIntent().getLongExtra(AppConstants.EXTRA_INTENT_PARCEL, 0);
