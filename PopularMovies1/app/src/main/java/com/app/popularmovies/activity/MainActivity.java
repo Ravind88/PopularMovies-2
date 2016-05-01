@@ -30,7 +30,7 @@ public class MainActivity extends BaseActivity  {
     public void initUi(Bundle savedInstanceState) {
         MoviesHelper.getDatabaseHelperInstance(AppController.getApplicationInstance());
         if (findViewById(R.id.item_detail_container) != null) {
-         // for tab
+            // for tab
             mTwoPane = true;
         }
         if(savedInstanceState==null){
@@ -75,7 +75,7 @@ public class MainActivity extends BaseActivity  {
     @Override
     public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
         super.onSaveInstanceState(outState, outPersistentState);
-        getSupportFragmentManager().putFragment(outState, "TAG_MY_FRAGMENT", moviesListFragment);
+        getSupportFragmentManager().putFragment(outState, TAG_MY_FRAGMENT, moviesListFragment);
 
     }
 

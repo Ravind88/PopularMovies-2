@@ -2,6 +2,7 @@ package com.app.popularmovies.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.View;
@@ -23,7 +24,9 @@ import com.app.popularmovies.utils.SnackBarBuilder;
 import com.app.popularmovies.webServices.ServerInteractor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import de.greenrobot.event.EventBus;
 import retrofit.Call;
@@ -38,7 +41,7 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
 
     private GridView mGridView;
     static final String STATE_SCROLL_POSITION = "scrollPosition";
-    int savedPosition = 0;
+    int savedPosition = 0,savePossitionForDetail=0;
     private ArrayList<MoviesResponseBean.MoviesResult> moviesResultsList = new ArrayList<>();
     private int mPagination = 1;
     MoviesDetailFragment moviesDetailFragment;
@@ -75,6 +78,7 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
     public void initUi(Bundle savedInstanceState) {
         EventBus.getDefault().register(this);
         mGridView = (GridView) findViewById(R.id.popular_movies_gridview);
+
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -83,10 +87,7 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
                 bundle.putParcelable(AppConstants.EXTRA_INTENT_PARCEL, moviesResultsList.get(position));
 
                 if (moviesListActivity.mTwoPane) {
-                    moviesDetailFragment = new MoviesDetailFragment();
-                    moviesDetailFragment.setArguments(bundle);
-                    moviesListActivity.getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.item_detail_container, moviesDetailFragment).commit();
+                    getDetailViewContatiner(position);
 
                 } else {
                     Intent intent = new Intent(mContext, MovieDetailActivity.class);
@@ -111,15 +112,32 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
         savedState = null;
     }
 
+    private void getDetailViewContatiner(int position) {
+        if(position>=0){
+            savePossitionForDetail=position;
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(AppConstants.EXTRA_INTENT_PARCEL, moviesResultsList.get(position));
+
+            if (((MainActivity) getActivity()).mTwoPane) {
+                moviesDetailFragment = new MoviesDetailFragment();
+                moviesDetailFragment.setArguments(bundle);
+                ((MainActivity) getActivity()).getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.item_detail_container, moviesDetailFragment).commit();
+
+            }
+
+        }
+
+    }
+
 
     private void getMoviesList(int progressBarVisibility) {
         if (mSortByParam.equals(AppConstants.MY_FAVORITES)) {
             MoviesListingDao moviesListingDao = new MoviesListingDao(mContext);
             mGridView.setOnScrollListener(null);
-            mAdapter = new MovieListAdapter(mContext, moviesListingDao.getFavouriteMovieList());
+            moviesResultsList=moviesListingDao.getFavouriteMovieList();
+            mAdapter = new MovieListAdapter(mContext, moviesResultsList);
             mGridView.setAdapter(mAdapter);
-
-
             showProgressBar(false);
         } else if (savedState == null) {
 
@@ -148,6 +166,8 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
                             if (mAdapter == null) {
                                 mAdapter = new MovieListAdapter(mContext, moviesResultsList);
                                 mGridView.setAdapter(mAdapter);
+                                savePossitionForDetail=-1;
+                                //getDetailViewContatiner(savePossitionForDetail);
                             } else {
                                 mAdapter.notifyDataSetChanged();
                             }
@@ -179,7 +199,11 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
             }
 
         } else {
-            setMovieList((MoviesResponseBean) savedState.getParcelable("list"));
+
+            List<MoviesResponseBean.MoviesResult> result = savedState.getParcelableArrayList("list");
+            savePossitionForDetail= savedState.getInt("detailpageposs");
+            getDetailViewContatiner(savePossitionForDetail);
+            setMovieList(result);
 
         }
 
@@ -188,12 +212,18 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
 
     private Bundle saveState() { /* called either from onDestroyView() or onSaveInstanceState() */
         Bundle state = new Bundle();
-        state.putParcelable("list", responseBean);
+        state.putParcelableArrayList("list", moviesResultsList);
+        state.putInt("detailpageposs",savePossitionForDetail);
         //
         return state;
     }
 
 
+    @Override
+    public void onPause() {
+        removeYourFragment();
+        super.onPause();
+    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -214,26 +244,25 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
         savedState = saveState(); /* vstup defined here for sure */
     }
 
-    private void setMovieList(MoviesResponseBean responseBean) {
+    private void setMovieList(List<MoviesResponseBean.MoviesResult> responseBean) {
 
         showProgressBar(false);
 
         if (responseBean != null) {
-            moviesResultsList.clear();
-            moviesResultsList.addAll(responseBean.getResults());
 
-            if (mPagination == 1) {
-                mGridView.setOnScrollListener(mEndlessScrollListener);
-            }
+
             savedPosition = savedState
                     .getInt(STATE_SCROLL_POSITION);
 
             mAdapter = new MovieListAdapter(mContext, moviesResultsList);
             mGridView.setAdapter(mAdapter);
             mGridView.setSelection(savedPosition);
-            if (responseBean.getResults().size() == 0) {
+
+            mGridView.setOnScrollListener(mEndlessScrollListener);
+
+           /* if (responseBean.size() == 0) {
                 mGridView.setOnScrollListener(null);
-            }
+            }*/
 
 //            if (responseBean.getResults().isEmpty())
 //                Lg.i("Retro", responseBean.toString());
@@ -272,6 +301,7 @@ public class MoviesListFragment extends BaseFragment implements SwipeRefreshLayo
 
         onRefresh();
         removeYourFragment();
+        savePossitionForDetail=-1;
     }
 
     public void removeYourFragment() {
